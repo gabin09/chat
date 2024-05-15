@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacker Chat</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #1c1c1c; /* 배경색 어두운 회색 */
+            color: #27b301; /* 글자색 연한 회색 */
+            margin: 0;
+            padding: 0;
+        }
+        #chat-box {
+            border: 1px solid #555;
+            border-radius: 10px;
+            padding: 20px;
+            height: 70vh;
+            overflow-y: scroll;
+            background-color: #333; /* 채팅창 배경색 어두운 회색 */
+        }
+        .message {
+            margin-bottom: 10px;
+        }
+        .message .bubble {
+            border-radius: 20px;
+            padding: 10px 20px;
+            display: inline-block;
+        }
+        .message .bubble.me {
+            background-color: #666; /* 내가 보낸 메시지 버블 색 */
+            align-self: flex-end;
+        }
+        .message .bubble.other {
+            background-color: #444; /* 상대방이 보낸 메시지 버블 색 */
+            align-self: flex-start;
+        }
+        #message-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #555;
+            border-radius: 5px;
+            background-color: #333; /* 메시지 입력창 배경색 어두운 회색 */
+            color: #c8c8c8; /* 메시지 입력창 글자색 연한 회색 */
+        }
+        #send-btn {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div id="chat-box" class="mb-3"></div>
+        <input type="text" id="message-input" placeholder="Type your message...">
+        <button id="send-btn" class="btn btn-secondary">Send</button>
+    </div>
+
+    <script>
+        const socket = new WebSocket("ws://localhost:5555");
+
+        socket.onopen = () => {
+            console.log("Connected to server.");
+        };
+
+        socket.onmessage = (event) => {
+            const chatBox = document.getElementById("chat-box");
+            const message = document.createElement("div");
+            message.textContent = event.data;
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        document.getElementById("send-btn").addEventListener("click", () => {
+            sendMessage();
+        });
+
+        document.getElementById("message-input").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const input = document.getElementById("message-input");
+            const message = input.value.trim();
+            if (message !== "") {
+                socket.send(message); // 서버로 메시지 전송
+                input.value = "";
+            }
+        }
+    </script>
+</body>
+</html>
