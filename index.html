@@ -91,15 +91,16 @@ body {
                     alert("Please enter your name.");
                     return;
                 }
+                // 사용자 이름을 서버로 전송
                 socket.send(`User ${userName} has joined the chat.`);
-                return;
-            }
-
-            const input = document.getElementById("message-input");
-            const message = input.value.trim();
-            if (message !== "") {
-                socket.send(`[${userName}] ${message}`);
-                input.value = "";
+            } else {
+                const input = document.getElementById("message-input");
+                const message = input.value.trim();
+                if (message !== "") {
+                    // 메시지를 서버로 전송
+                    socket.send(`[${userName}] ${message}`);
+                    input.value = "";
+                }
             }
         }
     </script>
