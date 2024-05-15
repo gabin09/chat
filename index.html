@@ -53,15 +53,19 @@ body {
 <body>
     <div class="container mt-5">
         <div id="chat-box" class="mb-3"></div>
+        <input type="text" id="name-input" placeholder="Enter your name...">
         <input type="text" id="message-input" placeholder="Type your message...">
         <button id="send-btn" class="btn btn-secondary">Send</button>
     </div>
 
     <script>
         const socket = new WebSocket("wss://gabin09.github.io/chat");
+        let userName = "";
 
         socket.onopen = () => {
             console.log("Connected to server.");
+            // 서버에 사용자 이름 전송
+            setName();
         };
 
         socket.onmessage = (event) => {
@@ -82,11 +86,19 @@ body {
             }
         });
 
+        function setName() {
+            userName = prompt("Enter your name:");
+            if (!userName) {
+                userName = "Anonymous";
+            }
+            socket.send(`User ${userName} has joined the chat.`);
+        }
+
         function sendMessage() {
             const input = document.getElementById("message-input");
             const message = input.value.trim();
             if (message !== "") {
-                socket.send(message); // 서버로 메시지 전송
+                socket.send(`[${userName}] ${message}`); // 서버로 메시지 전송
                 input.value = "";
             }
         }
