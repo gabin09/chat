@@ -2,107 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hacker Chat</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-body {
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #1c1c1c; /* 배경색 어두운 회색 */
-            color: #27b301; /* 글자색 연한 회색 */
-            margin: 0;
-            padding: 0;
-        }
-        #chat-box {
-            border: 1px solid #555;
-            border-radius: 10px;
-            padding: 20px;
-            height: 70vh;
-            overflow-y: scroll;
-            background-color: #333; /* 채팅창 배경색 어두운 회색 */
-        }
-        .message {
-            margin-bottom: 10px;
-        }
-        .message .bubble {
-            border-radius: 20px;
-            padding: 10px 20px;
-            display: inline-block;
-        }
-        .message .bubble.me {
-            background-color: #666; /* 내가 보낸 메시지 버블 색 */
-            align-self: flex-end;
-        }
-        .message .bubble.other {
-            background-color: #444; /* 상대방이 보낸 메시지 버블 색 */
-            align-self: flex-start;
-        }
-        #message-input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #555;
-            border-radius: 5px;
-            background-color: #333; /* 메시지 입력창 배경색 어두운 회색 */
-            color: #c8c8c8; /* 메시지 입력창 글자색 연한 회색 */
-        }
-        #send-btn {
-            margin-top: 10px;
-        }
-    </style>
+    <title>Chat Room</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.min.js"></script>
 </head>
 <body>
-    <div class="container mt-5">
-        <div id="chat-box" class="mb-3"></div>
-        <input type="text" id="name-input" placeholder="Enter your name...">
-        <input type="text" id="message-input" placeholder="Type your message...">
-        <button id="send-btn" class="btn btn-secondary">Send</button>
-    </div>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            var sock = io.connect('http://127.0.0.1:9999');
+            sock.on('connect', function(){
+                var connect_string = 'new_connect';
+                sock.send(connect_string);
+            });
 
-    <script>
-        const socket = new WebSocket("ws://localhost:5555");
-        let userName = "";
+            sock.on('hello', function(msg){
+                $('#messages').append('<li>' +'>>Hello :'+ msg + '</li>');
+                console.log('Received Hello Message');
+            });
 
-        socket.onopen = () => {
-            console.log("Connected to server.");
-        };
+            sock.on('message', function(msg){
+                // console.log(type(msg));
+                if(msg.type === 'normal'){
+                    $('#messages').append('>> '+msg.message+'<br>');
+                }else{
+                    $('#messages').append('<li>' + msg.message + '</li>');
+                }
+                console.log('Received Message : '+msg.type);
+            });
 
-        socket.onmessage = (event) => {
-            const chatBox = document.getElementById("chat-box");
-            const message = document.createElement("div");
-            message.textContent = event.data;
-            chatBox.appendChild(message);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        };
 
-        document.getElementById("send-btn").addEventListener("click", () => {
-            sendMessage();
+
+            $('#sendbutton').on('click', function(){
+                sock.send($('#myMessage').val());
+                $('#myMessage').val('');
+            });
         });
 
-        document.getElementById("message-input").addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                sendMessage();
-            }
-        });
 
-        function sendMessage() {
-            if (!userName) {
-                userName = document.getElementById("name-input").value.trim();
-                if (!userName) {
-                    alert("Please enter your name.");
-                    return;
-                }
-                // 사용자 이름을 서버로 전송
-                socket.send(`User ${userName} has joined the chat.`);
-            } else {
-                const input = document.getElementById("message-input");
-                const message = input.value.trim();
-                if (message !== "") {
-                    // 메시지를 서버로 전송
-                    socket.send(`[${userName}] ${message}`);
-                    input.value = "";
-                }
-            }
-        }
     </script>
+    <ul id="messages"></ul>
+    <input type="text" id="myMessage">
+    <button id="sendbutton">Send</button>
+
 </body>
 </html>
+출처: https://ljs93kr.tistory.com/58 [건프의 소소한 개발이야기:티스토리]
