@@ -4,20 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>파일 다운로드</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .download-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .download-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h1>파일 다운로드</h1>
-    <button onclick="downloadFile()">파일 다운로드</button>
+    <div class="container">
+        <h1>파일 다운로드</h1>
+        <button class="download-button" onclick="downloadFile()">파일 다운로드</button>
+    </div>
 
     <script>
         function downloadFile() {
-            // 파일 다운로드를 위한 URL 설정
-            var fileURL = 'https://drive.google.com/file/d/1ljE66msVm2GNOJegAt6sVXQxqdwlQQM8/view?usp=drive_link';
-
-            // 가상으로 링크를 만들어서 클릭하는 방식으로 파일 다운로드
+            var fileURL = 'https://drive.google.com/uc?export=download&id=1ljE66msVm2GNOJegAt6sVXQxqdwlQQM8'; // Google 드라이브에서 얻은 파일의 공유 링크
             var link = document.createElement('a');
             link.href = fileURL;
-            link.download = '메크로'; // 다운로드될 파일의 이름 설정
+            link.download = '메크로.zip'; // 다운로드될 파일의 이름
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
