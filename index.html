@@ -2,47 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Chat Room</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>파일 다운로드</title>
 </head>
 <body>
-    <script type="text/javascript">
-        $(document).ready(function(){
-            var sock = io.connect('http://127.0.0.1:9999');
-            sock.on('connect', function(){
-                var connect_string = 'new_connect';
-                sock.send(connect_string);
-            });
+    <h1>파일 다운로드</h1>
+    <button onclick="downloadFile()">파일 다운로드</button>
 
-            sock.on('hello', function(msg){
-                $('#messages').append('<li>' +'>>Hello :'+ msg + '</li>');
-                console.log('Received Hello Message');
-            });
+    <script>
+        function downloadFile() {
+            // 파일 다운로드를 위한 URL 설정
+            var fileURL = 'Google 드라이브에서 얻은 링크'; // 여기에 Google 드라이브에서 얻은 링크를 넣어주세요
 
-            sock.on('message', function(msg){
-                // console.log(type(msg));
-                if(msg.type === 'normal'){
-                    $('#messages').append('>> '+msg.message+'<br>');
-                }else{
-                    $('#messages').append('<li>' + msg.message + '</li>');
-                }
-                console.log('Received Message : '+msg.type);
-            });
-
-
-
-            $('#sendbutton').on('click', function(){
-                sock.send($('#myMessage').val());
-                $('#myMessage').val('');
-            });
-        });
-
-
+            // 가상으로 링크를 만들어서 클릭하는 방식으로 파일 다운로드
+            var link = document.createElement('a');
+            link.href = fileURL;
+            link.download = 'https://drive.google.com/file/d/1ljE66msVm2GNOJegAt6sVXQxqdwlQQM8/view?usp=drive_link'; // 다운로드될 파일의 이름 설정
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     </script>
-    <ul id="messages"></ul>
-    <input type="text" id="myMessage">
-    <button id="sendbutton">Send</button>
-
 </body>
 </html>
