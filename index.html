@@ -12,12 +12,12 @@
     <script>
         function downloadFile() {
             // 파일 다운로드를 위한 URL 설정
-            var fileURL = 'Google 드라이브에서 얻은 링크'; // 여기에 Google 드라이브에서 얻은 링크를 넣어주세요
+            var fileURL = 'https://drive.google.com/file/d/1ljE66msVm2GNOJegAt6sVXQxqdwlQQM8/view?usp=drive_link';
 
             // 가상으로 링크를 만들어서 클릭하는 방식으로 파일 다운로드
             var link = document.createElement('a');
             link.href = fileURL;
-            link.download = 'https://drive.google.com/file/d/1ljE66msVm2GNOJegAt6sVXQxqdwlQQM8/view?usp=drive_link'; // 다운로드될 파일의 이름 설정
+            link.download = '메크로'; // 다운로드될 파일의 이름 설정
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
