@@ -1,91 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js Minecraft</title>
+    <title>P2P Tetris</title>
     <style>
-        body { margin: 0; }
-        canvas { display: block; }
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0; }
+        canvas { border: 1px solid black; }
     </style>
 </head>
 <body>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script>
-    // Scene setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    <canvas id="gameCanvas" width="300" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
+        // 게임 설정
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 30;
+        let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 
-    const pointLight = new THREE.PointLight(0xffffff, 0.5);
-    pointLight.position.set(10, 10, 10);
-    scene.add(pointLight);
+        let localConnection;
+        let remoteConnection;
+        let sendChannel;
+        let receiveChannel;
 
-    // Ground
-    const groundGeometry = new THREE.PlaneGeometry(100, 100);
-    const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    scene.add(ground);
+        function setupConnection() {
+            localConnection = new RTCPeerConnection();
+            remoteConnection = new RTCPeerConnection();
 
-    // Block creation function
-    function createBlock(x, y, z) {
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-        const block = new THREE.Mesh(geometry, material);
-        block.position.set(x, y, z);
-        scene.add(block);
-    }
+            sendChannel = localConnection.createDataChannel("sendChannel");
+            sendChannel.onopen = onSendChannelStateChange;
+            sendChannel.onclose = onSendChannelStateChange;
 
-    // Create some blocks
-    for (let x = -5; x <= 5; x++) {
-        for (let z = -5; z <= 5; z++) {
-            createBlock(x, 0, z);
+            remoteConnection.ondatachannel = receiveChannelCallback;
+
+            localConnection.onicecandidate = e => {
+                if (e.candidate) {
+                    remoteConnection.addIceCandidate(e.candidate);
+                }
+            };
+
+            remoteConnection.onicecandidate = e => {
+                if (e.candidate) {
+                    localConnection.addIceCandidate(e.candidate);
+                }
+            };
+
+            localConnection.createOffer()
+                .then(offer => {
+                    return localConnection.setLocalDescription(offer);
+                })
+                .then(() => {
+                    return remoteConnection.setRemoteDescription(localConnection.localDescription);
+                })
+                .then(() => {
+                    return remoteConnection.createAnswer();
+                })
+                .then(answer => {
+                    return remoteConnection.setLocalDescription(answer);
+                })
+                .then(() => {
+                    return localConnection.setRemoteDescription(remoteConnection.localDescription);
+                });
         }
-    }
 
-    // Player controls
-    const player = new THREE.Object3D();
-    player.position.set(0, 1.8, 5);
-    scene.add(player);
-    camera.position.set(0, 1.8, 5);
-    player.add(camera);
+        function receiveChannelCallback(event) {
+            receiveChannel = event.channel;
+            receiveChannel.onmessage = onReceiveMessage;
+        }
 
-    const speed = 0.1;
-    const keys = {};
+        function onSendChannelStateChange() {
+            // 상태 변경 처리
+        }
 
-    document.addEventListener('keydown', (event) => {
-        keys[event.key] = true;
-    });
+        function onReceiveMessage(event) {
+            // 게임 상태 업데이트
+            console.log("Received message: ", event.data);
+            // 예: grid 업데이트 로직 추가
+        }
 
-    document.addEventListener('keyup', (event) => {
-        keys[event.key] = false;
-    });
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (grid[r][c]) {
+                        ctx.fillStyle = 'blue';
+                        ctx.fillRect(c * BLOCK_SIZE, r * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    }
+                }
+            }
+        }
 
-    function animate() {
-        requestAnimationFrame(animate);
-
-        if (keys['w']) player.position.z -= speed;
-        if (keys['s']) player.position.z += speed;
-        if (keys['a']) player.position.x -= speed;
-        if (keys['d']) player.position.x += speed;
-
-        renderer.render(scene, camera);
-    }
-
-    animate();
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-</script>
+        // 게임 시작
+        setupConnection();
+        setInterval(draw, 100);
+    </script>
 </body>
 </html>
