@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>테트리스 대기실</title>
+    <title>테트리스 P2P</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -68,17 +68,19 @@
         let rooms = {};
         let localPeerConnection;
         let remotePeerConnection;
+        let roomCode;
 
         document.getElementById('create-room').addEventListener('click', () => {
-            const roomCode = generateRoomCode();
-            rooms[roomCode] = [];
+            roomCode = generateRoomCode();
+            rooms[roomCode] = { peers: [] };
             enterLobby(roomCode);
             setupPeerConnection();
         });
 
         document.getElementById('join-room').addEventListener('click', () => {
-            const roomCode = document.getElementById('room-code').value;
-            if (rooms[roomCode]) {
+            const inputCode = document.getElementById('room-code').value;
+            if (rooms[inputCode]) {
+                roomCode = inputCode;
                 enterLobby(roomCode);
                 setupPeerConnection();
             } else {
@@ -90,10 +92,10 @@
             return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        function enterLobby(roomCode) {
+        function enterLobby(code) {
             document.getElementById('main-menu').style.display = 'none';
             document.getElementById('lobby').style.display = 'block';
-            document.getElementById('waiting-message').innerText = `${roomCode} 대기실`;
+            document.getElementById('waiting-message').innerText = `${code} 대기실`;
         }
 
         function setupPeerConnection() {
@@ -102,17 +104,16 @@
 
             localPeerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
-                    remotePeerConnection.addIceCandidate(event.candidate);
+                    remotePeerConnection.addIceCandidate(event.candidate).catch(console.error);
                 }
             };
 
             remotePeerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
-                    localPeerConnection.addIceCandidate(event.candidate);
+                    localPeerConnection.addIceCandidate(event.candidate).catch(console.error);
                 }
             };
 
-            // 데이터 채널 설정
             const dataChannel = localPeerConnection.createDataChannel('gameData');
             dataChannel.onopen = () => {
                 console.log('Data channel opened');
@@ -125,14 +126,13 @@
                 };
             };
 
-            // Offer/Answer
-            localPeerConnection.createOffer().then((offer) => {
+            localPeerConnection.createOffer().then(offer => {
                 return localPeerConnection.setLocalDescription(offer);
             }).then(() => {
                 return remotePeerConnection.setRemoteDescription(localPeerConnection.localDescription);
             }).then(() => {
                 return remotePeerConnection.createAnswer();
-            }).then((answer) => {
+            }).then(answer => {
                 return remotePeerConnection.setLocalDescription(answer);
             }).then(() => {
                 return localPeerConnection.setRemoteDescription(remotePeerConnection.localDescription);
