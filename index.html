@@ -3,99 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Tetris</title>
+    <title>테트리스 P2P</title>
     <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0; }
-        canvas { border: 1px solid black; }
+        body { font-family: Arial, sans-serif; }
+        #lobby { display: none; }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="300" height="600"></canvas>
+    <h1>테트리스 P2P</h1>
+    <div id="main-menu">
+        <button id="create-room">방 만들기</button>
+        <input type="text" id="room-code" placeholder="방 코드 입력">
+        <button id="join-room">방 들어가기</button>
+    </div>
+    <div id="lobby">
+        <h2>대기실</h2>
+        <p id="waiting-message">대기 중...</p>
+    </div>
+
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        let rooms = {};
+        let localPeerConnection;
+        let remotePeerConnection;
 
-        // 게임 설정
-        const COLS = 10;
-        const ROWS = 20;
-        const BLOCK_SIZE = 30;
-        let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        document.getElementById('create-room').addEventListener('click', () => {
+            const roomCode = generateRoomCode();
+            rooms[roomCode] = [];
+            enterLobby(roomCode);
+            setupPeerConnection();
+        });
 
-        let localConnection;
-        let remoteConnection;
-        let sendChannel;
-        let receiveChannel;
-
-        function setupConnection() {
-            localConnection = new RTCPeerConnection();
-            remoteConnection = new RTCPeerConnection();
-
-            sendChannel = localConnection.createDataChannel("sendChannel");
-            sendChannel.onopen = onSendChannelStateChange;
-            sendChannel.onclose = onSendChannelStateChange;
-
-            remoteConnection.ondatachannel = receiveChannelCallback;
-
-            localConnection.onicecandidate = e => {
-                if (e.candidate) {
-                    remoteConnection.addIceCandidate(e.candidate);
-                }
-            };
-
-            remoteConnection.onicecandidate = e => {
-                if (e.candidate) {
-                    localConnection.addIceCandidate(e.candidate);
-                }
-            };
-
-            localConnection.createOffer()
-                .then(offer => {
-                    return localConnection.setLocalDescription(offer);
-                })
-                .then(() => {
-                    return remoteConnection.setRemoteDescription(localConnection.localDescription);
-                })
-                .then(() => {
-                    return remoteConnection.createAnswer();
-                })
-                .then(answer => {
-                    return remoteConnection.setLocalDescription(answer);
-                })
-                .then(() => {
-                    return localConnection.setRemoteDescription(remoteConnection.localDescription);
-                });
-        }
-
-        function receiveChannelCallback(event) {
-            receiveChannel = event.channel;
-            receiveChannel.onmessage = onReceiveMessage;
-        }
-
-        function onSendChannelStateChange() {
-            // 상태 변경 처리
-        }
-
-        function onReceiveMessage(event) {
-            // 게임 상태 업데이트
-            console.log("Received message: ", event.data);
-            // 예: grid 업데이트 로직 추가
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let r = 0; r < ROWS; r++) {
-                for (let c = 0; c < COLS; c++) {
-                    if (grid[r][c]) {
-                        ctx.fillStyle = 'blue';
-                        ctx.fillRect(c * BLOCK_SIZE, r * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-                    }
-                }
+        document.getElementById('join-room').addEventListener('click', () => {
+            const roomCode = document.getElementById('room-code').value;
+            if (rooms[roomCode]) {
+                enterLobby(roomCode);
+                setupPeerConnection();
+            } else {
+                alert('존재하지 않는 방 코드입니다.');
             }
+        });
+
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        // 게임 시작
-        setupConnection();
-        setInterval(draw, 100);
+        function enterLobby(roomCode) {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('lobby').style.display = 'block';
+            document.getElementById('waiting-message').innerText = `${roomCode} 대기실`;
+        }
+
+        function setupPeerConnection() {
+            localPeerConnection = new RTCPeerConnection();
+            remotePeerConnection = new RTCPeerConnection();
+
+            localPeerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    remotePeerConnection.addIceCandidate(event.candidate);
+                }
+            };
+
+            remotePeerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    localPeerConnection.addIceCandidate(event.candidate);
+                }
+            };
+
+            // 데이터 채널 설정
+            const dataChannel = localPeerConnection.createDataChannel('gameData');
+            dataChannel.onopen = () => {
+                console.log('Data channel opened');
+            };
+
+            remotePeerConnection.ondatachannel = (event) => {
+                const receiveChannel = event.channel;
+                receiveChannel.onmessage = (e) => {
+                    console.log('Received message: ', e.data);
+                };
+            };
+
+            // Offer/Answer
+            localPeerConnection.createOffer().then((offer) => {
+                return localPeerConnection.setLocalDescription(offer);
+            }).then(() => {
+                return remotePeerConnection.setRemoteDescription(localPeerConnection.localDescription);
+            }).then(() => {
+                return remotePeerConnection.createAnswer();
+            }).then((answer) => {
+                return remotePeerConnection.setLocalDescription(answer);
+            }).then(() => {
+                return localPeerConnection.setRemoteDescription(remotePeerConnection.localDescription);
+            }).catch(console.error);
+        }
     </script>
 </body>
 </html>
